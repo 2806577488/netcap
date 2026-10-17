@@ -82,7 +82,7 @@ void main() {
   testWidgets('the first screen is one switch and plain words', (tester) async {
     await open(tester);
     expect(find.text('让所有程序都走过滤'), findsOneWidget);
-    expect(find.text('自动让所有程序走 netcap'), findsOneWidget);
+    expect(find.text('自动让系统代理走 netcap'), findsOneWidget);
     expect(find.textContaining('netcap-restore.cmd'), findsWidgets);
     expect(find.textContaining('PAC 模式'), findsWidgets);
     expect(find.text('取消不会改动任何设置'), findsOneWidget);

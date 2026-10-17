@@ -246,7 +246,7 @@ class _TakeoverPageState extends State<TakeoverPage> {
           dense: true,
           contentPadding: EdgeInsets.zero,
           value: on,
-          title: const Text('自动让所有程序走 netcap',
+          title: const Text('自动让系统代理走 netcap',
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
           subtitle: Text(
             on

@@ -20,7 +20,7 @@ void main() {
     expect(find.text('netcap UI'), findsOneWidget);
     // The window opens on the interception proxy — no three-way source switch,
     // and the packet-capture controls now live behind 抓包工具.
-    expect(find.text('让所有程序走 netcap'), findsOneWidget);
+    expect(find.text('让系统代理走 netcap'), findsOneWidget);
     expect(find.text('抓包工具'), findsOneWidget);
     expect(find.text('开始捕获'), findsNothing);
     expect(find.text('pcap 文件'), findsNothing);

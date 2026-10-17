@@ -254,11 +254,11 @@ void main() {
       expect(find.text('更多设置'), findsOneWidget);
       // One control does the whole thing in this panel: it starts the proxy
       // *with* the system proxy in its hands (there is no separate 启动代理).
-      expect(find.text('让所有程序走 netcap'), findsOneWidget);
+      expect(find.text('让系统代理走 netcap'), findsOneWidget);
       // The capture-only actions (生成示例抓包, 抓包选项) belong to the pcap side
       // and are not in this panel; the "every program through netcap" takeover
       // is a single chip instead of a page.
-      expect(find.text('让所有程序走 netcap'), findsOneWidget);
+      expect(find.text('让系统代理走 netcap'), findsOneWidget);
       expect(find.byIcon(Icons.tune), findsOneWidget); // 更多设置, not 抓包选项
       expect(find.text('还没有拦截记录'), findsOneWidget);
       // The pane is *status only*: the settings pages are opened from the tool
@@ -335,7 +335,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
 
       // Closing the tool leaves the window on the proxy.
-      expect(find.text('让所有程序走 netcap'), findsOneWidget);
+      expect(find.text('让系统代理走 netcap'), findsOneWidget);
       expect(find.text('开始捕获'), findsNothing);
 
       await tester.pumpWidget(const SizedBox.shrink());

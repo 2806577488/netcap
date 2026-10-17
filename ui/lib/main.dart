@@ -1568,7 +1568,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
                         _sysProxy ? Icons.verified_user : Icons.shield_outlined,
                         size: 18,
                       ),
-                      label: const Text('让所有程序走 netcap'),
+                      label: const Text('让系统代理走 netcap'),
                     ),
                   )
           else
