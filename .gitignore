@@ -25,3 +25,7 @@ tools/*.exe
 
 # ---- logs ----
 *.log
+
+# release 资产：只挂在 GitHub Release 上，不重复塞进版本库
+netcap-win64.zip
+*.zip
