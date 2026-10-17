@@ -1,7 +1,22 @@
-# netcap · 底层网络流量捕获器
+# netcap · 本地拦截代理与广告过滤器
 
-`netcap` 是一个用 C++20 从零实现的网络流量捕获与解析工具。**不依赖 libpcap / Npcap / WinPcap，不依赖任何第三方库**。
-直接使用操作系统的原始套接字收包，协议解析、pcap 文件读写、过滤引擎全部自己实现。
+`netcap` 是一个**本地拦截代理**：接管 Windows 系统代理（或 TUN 虚拟网卡），在请求到达浏览器之前
+按 EasyList / AdGuard 规则表拦掉广告与追踪，对页面做元素隐藏（cosmetic filtering），
+并能做 `$replace` / `$css` / `$redirect` / `$script` 这类数据层改写。附带一个 Flutter 写的 Windows 界面。
+
+**主功能是过滤，抓包是地基。** 底层那套从零实现的抓包与协议解析——原始套接字收包、pcap 读写、
+协议解码、过滤表达式语言、离线自测——本身也能单独当研究工具用（`netcap -r sample.pcap` 照样跑），
+但它是支撑而不是目的：没有解析就没有 Host / SNI / URL 这些判据，过滤也就无从谈起。
+
+| | |
+| --- | --- |
+| **主功能** | 本地拦截代理 + 规则过滤（广告 / 追踪）、cosmetic 元素隐藏、数据层改写 |
+| 附带能力 | 抓包与协议解析、TLS 中间人解密、HTTP/2 与 QUIC 实验、WFP 内核阻断、进程归属 |
+| 界面 | Flutter（`ui/`）：规则列表管理、实时日志、点选元素生成规则 |
+| 依赖 | 不依赖 libpcap / Npcap / WinPcap，不依赖任何第三方库 |
+| 许可 | 自研代码 MIT；借用的规则表与 `wintun.dll` 见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) |
+
+过滤功能的完整说明在下面《广告拦截：规则表 · 本地拦截代理 · hosts · DNS 黑洞》一节。
 
 ```
 netcap -i WLAN -f "tls and hostname example.com" -v
@@ -9,7 +24,7 @@ netcap -r capture.pcap -f "http and url /login" -X
 netcap --selftest
 ```
 
-## 设计原则
+## 抓包地基的设计原则
 
 | 原则 | 做法 |
 | --- | --- |
