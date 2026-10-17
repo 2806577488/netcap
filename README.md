@@ -108,21 +108,24 @@ $ ./build/netcap.exe --rules rules\adblock.txt --serve 127.0.0.1:8080
 
 ```
 $ netcap --rules sample.rules --serve 127.0.0.1:8089 --system-proxy check
-netcap: a system proxy takeover would chain through 127.0.0.1:7890
+netcap: a system proxy takeover would not chain anywhere: traffic would leave this
+        machine directly (that only works for what this machine can reach on its own)
 $ netcap --rules sample.rules --serve 127.0.0.1:8089 --system-proxy on
 netcap: local interception proxy on 127.0.0.1:8089
-netcap: chaining every upstream connection through 127.0.0.1:7890
 netcap: system proxy now 127.0.0.1:8089 (was 127.0.0.1:26561), previous settings in
         netcap_sysproxy.state; Ctrl+C puts them back
 ```
+
+系统代理原本**开着**的时候，`on` 的输出里还会多一行 `netcap: chaining every upstream connection through …`——那才是继承上一跳的情况。
 
 `on` 写的是 `HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings` 里的 `ProxyEnable`/`ProxyServer`/`ProxyOverride`，并且**顺手删掉 `AutoConfigURL`**——PAC 的优先级高于手动代理，不删就轮不到 netcap。写完调一次 `InternetSetOption(INTERNET_OPTION_SETTINGS_CHANGED/REFRESH)` 通知正在运行的程序。只动 HKCU，不需要管理员。Ctrl+C 退出时按快照还原；被强杀（任务管理器、「停止」按钮杀不掉时用 `taskkill /F`）之后跑一条 `netcap --system-proxy restore` 就能回到接管前的样子（快照文件里记着四个值的原始内容）。
 
 安全规则（都是踩过的坑换来的）：
 
 - **先落快照、再动注册表**：快照文件写不进去就直接放弃，机器一个字节都不改（自测里有 `_netcap_no_such_dir_/…` 专门钉住这条）。快照已存在时**不覆盖**，免得把真正的原始值盖掉。
-- **接管前先探活「上一跳」**：显式 `--upstream 127.0.0.1:7890`，或者不给时自动在候选表里找 —— 当前配置里的代理端口，加上 `127.0.0.1:7890/7897/7891/10809/1080/10808/8888`（Clash / V2Ray / SS 的常见端口）。找到能 TCP 连上的就用它做上游，`CONNECT` 与普通请求都经它转发。
-- **一个都连不上就拒绝接管**，退出码 4，并告诉你怎么继续（`--upstream` 或 `--system-proxy-force`）。这条是实测事故的直接产物：本机原来靠 PAC 走 Clash，接管后 netcap 直连，`https://example.com` 立刻变成 `000`（浏览器里就是 `ERR_PROXY_CONNECTION_FAILED`），等于把机器断网。真机上现在探活会选中 `127.0.0.1:7890`，同样的请求经接管后的代理是 `200`。
+- **接管前先看「上一跳」是不是真的在用**：系统代理本来**关着**（`ProxyEnable=0`），说明这台机器此刻就是直连，接管后照样直连，一个候选都不探。系统代理本来**开着**，才继承 `ProxyServer` 那台，`CONNECT` 与普通请求都经它转发；探不通就拒绝接管，退出码 4，并告诉你怎么继续（`--upstream` 或 `--system-proxy-force`）。
+  这条是 2026-10 的一次实测事故改出来的：`ProxyEnable=0` 时旧逻辑照样在候选表里找，结果把本机空跑着的 Clash（`127.0.0.1:7890`）捡来当上游，**把原本的直连悄悄改成了绕境外**，只认境内 IP 的站（`www.88ystv.com`，Fikker CDN）当场 TLS reset、整页白屏。接管不该改变流量去哪，只该在中间插一层。
+- **候选表只在必要时兜底**：`127.0.0.1:7890/7897/7891/10809/1080/10808/8888`（Clash / V2Ray / SS 的常见端口）只在「系统代理开着、但 `ProxyServer` 指不到能用的地方」时才依次试。`--upstream` 显式指定时依旧先探活，探不通走同一条拒绝逻辑。
 - **`--system-proxy check` 只做决定不落地**：它把「会链到哪儿 / 会不会拒绝」打印出来就退出 0，注册表一个字节不改（适合先看一眼再决定要不要 `on`）。`--system-proxy status [--json]` 打印当前四个值、快照文件状态与「当前是否正被 netcap 接管」。
 - **桌面上有一把"急停钥匙"**：`C:\Users\Czr\Desktop\netcap-restore.cmd`（双击运行，会请求一次管理员）。它**完全离线**，不依赖 netcap、不依赖网络，做的事是：杀掉残留的 `netcap`/`netcap_ui` → 删掉任何 `netcap` / `*Wintun*` 网卡上的路由并移除该网卡 → 删掉"不在快照里、且挂在隧道上"的默认路由 → 按 `netcap-net-backup.json` 里的默认路由与**四个代理注册表值**与各网卡 DNS 复原 → 清 DNS 缓存与 ARP → 打印 before/after 路由表，并对网关、`1.1.1.1`、`example.com` 做三项连通自检。三种用法：`-DryRun`（只打印计划，一行不改）、`-Backup`（把**当前正常状态**存成新的 json）、`-Hard`（复原后跑 `Restart-NetAdapter` 物理网卡，用于网卡状态被搞乱、必须重启的情况）。本机管理员实测输出：`elevated: True`、`routes identical: True`、`proxy identical: True`、`gateway 192.168.0.1 answers: True`、`internet (1.1.1.1) answers: True`、`dns lookup of example.com: True`。**规矩：任何会动路由或系统代理的实验，之前都必须先确认这把钥匙还在桌面上。**
 

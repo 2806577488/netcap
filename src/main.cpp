@@ -1897,6 +1897,15 @@ static bool resolve_upstream(const Options& o, std::string* upstream, std::strin
     *refusal = "cannot read the current system proxy settings (" + live_error + ")";
     return true;
   }
+  // A disabled system proxy means nothing on this machine is being routed through a proxy right
+  // now: the traffic is already direct.  Adopting some local proxy that merely happens to be
+  // listening (Clash, v2rayN, Fiddler...) would silently change where every request goes, which is
+  // not what taking the flag over is for.  Mirror the machine and stay direct instead.  Only a
+  // proxy that is actually enabled is inherited, and only it has to answer.
+  if (!live.enabled()) {
+    *upstream = "";
+    return true;
+  }
   for (const std::string& candidate : system_proxy_candidate_upstreams(live)) {
     std::string probe_error;
     if (system_proxy_probe(candidate, 400, &probe_error)) {
