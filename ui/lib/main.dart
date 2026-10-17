@@ -1538,8 +1538,9 @@ class _CaptureScreenState extends State<CaptureScreen> {
                 : _deviceDropdown()),
           ),
           // In proxy mode this one control does everything: press it and netcap
-          // starts *with* the system proxy in its hands, so every program (not
-          // just the ones someone pointed at us) walks through the filter.  A
+          // starts *with* the system proxy in its hands, so programs that read the
+          // system proxy (browsers, IM clients, Electron apps) walk through the
+          // filter instead of only the ones someone pointed at us.  A
           // separate "启动代理" button would only be a second way to do the same
           // thing, so there is none; the plain start (no takeover) lives in
           // 更多设置 for the explicit-proxy case.
@@ -1555,9 +1556,11 @@ class _CaptureScreenState extends State<CaptureScreen> {
                     label: const Text('停止并还原'),
                   )
                 : Tooltip(
-                    message: '按一下就接管所有程序：启动时由 netcap 把当前用户的系统代理临时指到它自己，'
-                        '浏览器、微信、其它软件就都走过滤了；退出时按快照把系统代理还原。\n'
-                        '上游不通时 netcap 会拒绝接管（不会把机器断网），桌面 netcap-restore.cmd 随时能还原。',
+                    message: '点一下＝启动拦截代理，并把本机系统代理临时指向它（127.0.0.1:8080）。\n'
+                        '覆盖范围：读系统代理的程序——浏览器、微信/QQ、Electron 应用等。'
+                        '自己写死网络、不读系统代理的程序管不到，那需要 TUN 全接管。\n'
+                        '上游不通时 netcap 会拒绝接管（不会把机器断网）；再按一次或退出即按快照还原，'
+                        '桌面 netcap-restore.cmd 可离线急停。',
                     child: FilledButton.icon(
                       onPressed: _takeoverBusy ? null : _toggleAllPrograms,
                       style: FilledButton.styleFrom(visualDensity: VisualDensity.compact),
@@ -2896,10 +2899,14 @@ class _CaptureScreenState extends State<CaptureScreen> {
     }
   }
 
-  /// One press on the capture bar: let every program walk through netcap by
-  /// handing it this user's system proxy (the same switch as the takeover page's
-  /// master toggle, minus the page).  Pressing it while the proxy runs stops and
-  /// restarts, because the flags are read at startup.
+  /// One press on the capture bar: hand this user's system proxy to netcap (the
+  /// same switch as the takeover page's master toggle, minus the page).
+  ///
+  /// Scope is "programs that honour the system proxy", not literally every
+  /// process: a program with its own network stack never reads this setting, and
+  /// nothing here can change that — TUN is the mode that catches those.  Pressing
+  /// it while the proxy runs stops and restarts, because the flags are read at
+  /// startup.
   ///
   /// Safety is not this method's job: `netcap --system-proxy on` probes the
   /// previous hop first and refuses the takeover (exit code 4) when nothing
@@ -2917,7 +2924,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
       if (next && _tunSession) _tunSession = false;
     });
     _appendLog(next
-        ? '接管所有程序：启动时把当前用户的系统代理临时指到 netcap（退出时按快照还原）'
+        ? '接管系统代理：把它临时指向 127.0.0.1:8080，读系统代理的程序都会走过滤（退出时按快照还原）'
         : '取消接管：启动时不动系统代理，只有自己设了代理的程序会走过滤');
     if (next && _upstreamCtrl.text.trim().isEmpty) {
       _appendLog('上游留空：netcap 会自己试 127.0.0.1:7890/7897/…，都没人应答就拒绝接管（机器不会断网）');
