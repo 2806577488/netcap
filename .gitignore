@@ -29,3 +29,7 @@ tools/*.exe
 # release 资产：只挂在 GitHub Release 上，不重复塞进版本库
 netcap-win64.zip
 *.zip
+
+# 本机发布笔记（含明文 token），永远不进仓库
+/GITHUB.md
+/gh-push.ps1
