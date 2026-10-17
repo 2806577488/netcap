@@ -1,0 +1,27 @@
+﻿# ---- build output ----
+/build/
+/build-dbg/
+/ui/build/
+/ui/.dart_tool/
+/ui/windows/flutter/ephemeral/
+/ui/.idea/
+*.iml
+
+# ---- scratch: probe scripts and results live as _* at the repo root ----
+/_*
+
+# ---- local secrets: the MITM CA must never be published ----
+_mitmca.crt
+_mitmca.key
+*.pem
+*.p12
+*.pfx
+
+# ---- build residue ----
+*.pdb
+*.obj
+*.ilk
+tools/*.exe
+
+# ---- logs ----
+*.log

@@ -1,0 +1,30 @@
+! netcap demo list
+||ads.example.com^
+||doubleclick.net^
+@@||example.com/ok.js
+track.test.net
+0.0.0.0 metrics.example.org
+/page?utm_source=$removeparam=utm_source
+/reklama/*$script,third-party
+||weird.example^$unknownopt
+! CSDN 文章页的广告：拦的是广告地址和广告位元素，不是整页。
+! 页面里真实出现的广告脚本（证据：_csdn.html 里的 script src / link href）：
+||dup.baidustatic.com^
+||push.zhanzhang.baidu.com^
+! 广告位拉素材时走的联盟与统计地址（百度联盟 + 常见第三方）：
+||pos.baidu.com^
+||cpro.baidu.com^
+||cbjs.baidu.com^
+||hm.baidu.com^
+||googlesyndication.com^
+||adservice.google.com^
+||cnzz.com^
+! 页面里给推荐位打点的参数：去掉不影响阅读，只让 CSDN 少认你一点。
+||blog.csdn.net^$removeparam=spm
+||blog.csdn.net^$removeparam=utm_source
+||blog.csdn.net^$removeparam=utm_medium
+! 元素隐藏（##）：广告位在页面上直接消失，选择器取自页面里真实的 class。
+blog.csdn.net##.simple-ad-slot
+blog.csdn.net##.simple-ad-slot__fixed
+blog.csdn.net##.has-ad-slots .simple-ad-slot-left
+blog.csdn.net##.has-ad-slots .simple-ad-slot-right
